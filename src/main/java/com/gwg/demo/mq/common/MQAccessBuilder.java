@@ -274,7 +274,6 @@ public class MQAccessBuilder {
 			 */
 			logger.info("direct exchangeDeclare ..........");
 			channel.exchangeDeclare(exchange, "direct", true, false, null);
-			//channel.exchangeDeclare("EXCHANGE_DIRECT_DEADLETTER_TEST", "direct", true, false, null);//死信
 		} else if (type.equals("topic")) {
 			logger.info("topic exchangeDeclare ..........");
 			channel.exchangeDeclare(exchange, "topic", true, false, null);
@@ -282,23 +281,13 @@ public class MQAccessBuilder {
 		logger.info("queueDeclare ..........");
 		channel.queueDeclare(queue, true, false, false, null);
 		
-		/*Map<String, Object> args = new HashMap<String, Object>();
-		args.put("x-dead-letter-exchange", "EXCHANGE_DIRECT_DEADLETTER_TEST");//指定队列使用的死信交换器
-		args.put("x-message-ttl", 360000);//设置消息在队列中的存活时间
-		//你也可以为这个DLX指定routing key，如果没有特殊指定，则使用原队列的routing key
-		args.put("x-dead-letter-routing-key", routingKey);
-		channel.queueDeclare("QUEUE_DEADLETTER_TEST", false, false, false, null);
-		*/
-		
 		logger.info("queueBind ..........");
 		/*
 		 * 在这里Routingkey的作用：
 		 * 1.exchange会根据queue对那个routingKey感兴趣，将消息路由到相应的queue里面
 		 * 2.同一个queue可以通过多个routingKey感兴趣
 		 */
-		channel.queueBind(queue, exchange, routingKey);
-		//channel.queueBind("QUEUE_DEADLETTER_TEST", exchange, routingKey);
-        
+		channel.queueBind(queue, exchange, routingKey);        
 
 		try {
 			channel.close();
@@ -321,7 +310,7 @@ public class MQAccessBuilder {
 		return declareOk.getMessageCount();
 	}
 	
-	/****************Dead Letter  死信处理 ***********************************************************/
+	/****************Dead Letter  死信处理   ***********************************************************/
 	public void buildDeadLetterQueue(String exchange, String deadLetterExchange, String deadLetterrRoutingKey, final String deadLetterQueue, ConnectionFactory connectionFactory, String type) throws IOException{
 		logger.info("构建死信队列 start ......");
 		logger.info("DeadLetter buildDeadLetterQueue, exchange:{}, deadLetterExchange:{}, deadLetterRoutingKey:{}, deadLetterQueue:{}, connectionFactory:{}, type:{}",exchange ,deadLetterExchange, deadLetterrRoutingKey, deadLetterQueue, connectionFactory, type);
