@@ -77,9 +77,9 @@ public class RabbitMQConfig {
     public MQAccessBuilder mqAccessBuilder() throws IOException{
 		MQAccessBuilder mqAccessBuilder = new MQAccessBuilder(connectionFactory());
 		//构建正常队列，必须在死信队列之前
-		mqAccessBuilder.buildQueue(userExchangeName, userRouting, userQueueName, connectionFactory(), "direct");
+		mqAccessBuilder.buildQueue(userExchangeName, userRouting, userQueueName, connectionFactory(), "direct", deadLetterExchangeName, deadLetteruserRouting);
 		//构建死信队列
-		mqAccessBuilder.buildDeadLetterQueue(userExchangeName, deadLetterExchangeName, deadLetteruserRouting, deadLetterQueueName, connectionFactory(), "direct");
+		mqAccessBuilder.buildDeadLetterQueue(deadLetterExchangeName, deadLetteruserRouting, deadLetterQueueName, connectionFactory(), "direct");
 		return mqAccessBuilder;
 	}
 

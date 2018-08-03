@@ -254,9 +254,9 @@ public class MQAccessBuilder {
 	/**
 	 * 构建交换器，队列，并将交换器和队列绑定
      */
-	public void buildQueue(String exchange, String routingKey, final String queue, ConnectionFactory connectionFactory, String type)
+	public void buildQueue(String exchange, String routingKey, final String queue, ConnectionFactory connectionFactory, String type, String deadLetterExchange, String deadLetterrRoutingKey)
 			throws IOException {
-		logger.info("buildQueue, exchange:{}, routingKey:{}, queue:{}, connectionFactory:{}, type:{}",exchange ,routingKey, queue, connectionFactory, type);
+		logger.info("buildQueue, exchange:{}, routingKey:{}, queue:{}, connectionFactory:{}, type:{}, deadLetterExchange:{}, deadLetterrRoutingKey:{}",exchange ,routingKey, queue, connectionFactory, type);
 		logger.info("createConnection ..........");
 		Connection connection = connectionFactory.createConnection();
 		
@@ -279,7 +279,12 @@ public class MQAccessBuilder {
 			channel.exchangeDeclare(exchange, "topic", true, false, null);
 		}
 		logger.info("queueDeclare ..........");
-		channel.queueDeclare(queue, true, false, false, null);
+		Map<String, Object> args = new HashMap<String, Object>();
+		args.put("x-dead-letter-exchange", deadLetterExchange);//指定队列使用的死信交换器
+		args.put("x-message-ttl", 360000);//设置消息在队列中的存活时间,时间单位毫秒
+		//你也可以为这个DLX指定routing key，如果没有特殊指定，则使用原队列的routing key
+		args.put("x-dead-letter-routing-key", deadLetterrRoutingKey);//此routingKey需要与死信队列的RoutingKey相同
+		channel.queueDeclare(queue, true, false, false, args);//args配置了死信队列，如果消费失败，将消息丢入死信队列
 		
 		logger.info("queueBind ..........");
 		/*
@@ -311,9 +316,9 @@ public class MQAccessBuilder {
 	}
 	
 	/****************Dead Letter  死信处理   ***********************************************************/
-	public void buildDeadLetterQueue(String exchange, String deadLetterExchange, String deadLetterrRoutingKey, final String deadLetterQueue, ConnectionFactory connectionFactory, String type) throws IOException{
+	public void buildDeadLetterQueue(String deadLetterExchange, String deadLetterrRoutingKey, final String deadLetterQueue, ConnectionFactory connectionFactory, String type) throws IOException{
 		logger.info("构建死信队列 start ......");
-		logger.info("DeadLetter buildDeadLetterQueue, exchange:{}, deadLetterExchange:{}, deadLetterRoutingKey:{}, deadLetterQueue:{}, connectionFactory:{}, type:{}",exchange ,deadLetterExchange, deadLetterrRoutingKey, deadLetterQueue, connectionFactory, type);
+		logger.info("DeadLetter buildDeadLetterQueue, deadLetterExchange:{}, deadLetterRoutingKey:{}, deadLetterQueue:{}, connectionFactory:{}, type:{}",deadLetterExchange, deadLetterrRoutingKey, deadLetterQueue, connectionFactory, type);
 		Connection connection = connectionFactory.createConnection();
 		Channel channel = connection.createChannel(false);
 		if (type.equals("direct")) {
@@ -330,14 +335,10 @@ public class MQAccessBuilder {
 			logger.info("topic exchangeDeclare ..........");
 			channel.exchangeDeclare(deadLetterExchange, "topic");
 		}
-		Map<String, Object> args = new HashMap<String, Object>();
-		args.put("x-dead-letter-exchange", deadLetterExchange);//指定队列使用的死信交换器
-		args.put("x-message-ttl", 360000);//设置消息在队列中的存活时间,时间单位毫秒
-		//你也可以为这个DLX指定routing key，如果没有特殊指定，则使用原队列的routing key?
-		args.put("x-dead-letter-routing-key", deadLetterrRoutingKey);
-		channel.queueDeclare(deadLetterQueue, false, false, false, args);
+        //死信队列
+		channel.queueDeclare(deadLetterQueue, false, false, false, null);
 		//注意第二参数不是死信交换器，在这里死信队列deadLetterQueue对deadLetterrRoutingKey感兴趣
-		channel.queueBind(deadLetterQueue, exchange, deadLetterrRoutingKey);
+		channel.queueBind(deadLetterQueue, deadLetterExchange, deadLetterrRoutingKey);
 		try {
 			channel.close();
 		} catch (TimeoutException e) {

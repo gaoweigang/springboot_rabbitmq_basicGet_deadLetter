@@ -15,4 +15,4 @@ channel.queueDeclare("myqueue", false, false, false, args);
 
 你也可以为这个DLX指定routing key，如果没有特殊指定，则使用原队列的routing key
 
-参考：https://blog.csdn.net/u013256816/article/details/54933065
+参考：https://blog.csdn.net/qq_29778131/article/details/52536965
